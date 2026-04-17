@@ -93,3 +93,6 @@ Cada problema implementa `initialState()` y `handleEvent()`, lo que permite agre
 ## Autores
 
 Proyecto universitario — Modelado y Simulación de Sistemas.
+
+- Cassiel Lucero — EISI886
+- Jose Lautaro Soreire — EISI853
