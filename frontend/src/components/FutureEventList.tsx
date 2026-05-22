@@ -6,14 +6,10 @@ interface Props {
 }
 
 const labels: Record<string, { text: string; icon: string; color: string }> = {
-  arrival:        { text: 'Llegada',      icon: 'fi fi-rr-sign-in-alt', color: 'text-blue-400' },
-  departure:      { text: 'Fin servicio', icon: 'fi fi-rr-sign-out-alt', color: 'text-emerald-400' },
-  server_on:      { text: 'Servidor ON',  icon: 'fi fi-rr-bolt', color: 'text-emerald-400' },
-  server_off:     { text: 'Servidor OFF', icon: 'fi fi-rr-power', color: 'text-amber-400' },
-  abandon:        { text: 'Abandono',     icon: 'fi fi-rr-running', color: 'text-red-400' },
-  move_to_server: { text: 'A servidor',   icon: 'fi fi-rr-arrow-right', color: 'text-zinc-400' },
-  arrival_a:      { text: 'Llegada A',    icon: 'fi fi-rr-star', color: 'text-blue-400' },
-  arrival_b:      { text: 'Llegada B',    icon: 'fi fi-rr-user', color: 'text-amber-400' },
+  arrival:        { text: 'Llegada al sistema', icon: 'fi fi-rr-sign-in-alt', color: 'text-blue-400' },
+  departure_s1:   { text: 'Fin servicio PS1',  icon: 'fi fi-rr-sign-out-alt', color: 'text-orange-400' },
+  departure_s2:   { text: 'Fin servicio PS2',  icon: 'fi fi-rr-sign-out-alt', color: 'text-cyan-400' },
+  departure_s3:   { text: 'Fin servicio PS3',  icon: 'fi fi-rr-sign-out-alt', color: 'text-emerald-400' },
 };
 
 export default function FutureEventList({ fel }: Props) {

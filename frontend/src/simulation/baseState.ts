@@ -1,40 +1,49 @@
 /**
- * Estado base para inicializar cualquier simulación.
- * Cada problema parte de este estado y lo personaliza según sus necesidades.
+ * Estado base para inicializar la simulación.
  */
 
 import type { SimulationState } from './types';
 
 export const createBaseState = (): SimulationState => ({
   clock: 0,
-  serverBusy: false,
-  serverOn: true,        // Por defecto el servidor está disponible
   queue: [],
-  queueA: [],
-  queueB: [],
-  securityQueue: [],
+  queue1: [],
+  queue2: [],
+  queue3: [],
+  currentClientS1: null,
+  currentClientS2: null,
+  currentClientS3: null,
+  server1Busy: false,
+  server2Busy: false,
+  server3Busy: false,
+  serverBusy: false,
+  serverOn: true,
   currentClient: null,
-  currentSecurityClient: null,
-  securityBusy: false,
   clientIdCounter: 0,
   finished: false,
   stats: {
     totalArrivals: 0,
     totalDepartures: 0,
-    totalWaitTime: 0,
     totalSystemTime: 0,
-    serverBusyTime: 0,
-    totalQueueArea: 0,
-    lastEventTime: 0,
-    lastQueueLength: 0,
-    abandonedClients: 0,
+    totalWaitTime: 0,
+    server1BusyTime: 0,
+    server2BusyTime: 0,
+    server3BusyTime: 0,
+    departuresS1: 0,
+    departuresS2: 0,
+    departuresS3: 0,
   },
   log: [],
+  simulationMatrix: [],
+  arrivalIndex: 0,
+  abandonedClients: 0,
+  servedClients: 0,
+  divertedClients: 0,
+  serverBreaks: 0,
 });
 
 /**
  * Agrega una entrada al log de la simulación.
- * Limita el log a 200 entradas para evitar consumo excesivo de memoria.
  */
 export const addLog = (
   state: SimulationState,
@@ -43,23 +52,5 @@ export const addLog = (
 ): SimulationState['log'] => {
   const entry = { time: state.clock, message, type };
   const newLog = [entry, ...state.log];
-  return newLog.slice(0, 200); // máximo 200 entradas
-};
-
-/**
- * Actualiza el área bajo la curva de longitud de cola.
- * Esto nos permite calcular el promedio de clientes en cola con:
- *   L_q = totalQueueArea / clock
- */
-export const updateQueueArea = (
-  state: SimulationState,
-  currentQueueLength: number
-): Partial<SimulationState['stats']> => {
-  const dt = state.clock - state.stats.lastEventTime;
-  const newArea = state.stats.totalQueueArea + state.stats.lastQueueLength * dt;
-  return {
-    totalQueueArea: newArea,
-    lastEventTime: state.clock,
-    lastQueueLength: currentQueueLength,
-  };
+  return newLog.slice(0, 300);
 };

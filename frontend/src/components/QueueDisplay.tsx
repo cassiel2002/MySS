@@ -65,16 +65,21 @@ function QueueRow({ label, clients, icon }: {
 }
 
 export default function QueueDisplay({ state, problemId }: Props) {
+  if (problemId === 7) {
+    // Cola única para servidores paralelos
+    return (
+      <div className="space-y-3">
+        <QueueRow label="Cola Única" clients={state.queue} icon="fi fi-rr-queue-line" />
+      </div>
+    );
+  }
+
+  // Problema 6 y 8: una cola por puesto
   return (
     <div className="space-y-3">
-      {problemId === 4 ? (
-        <>
-          <QueueRow label="Cola A — Prioridad" clients={state.queueA} icon="fi fi-rr-star" />
-          <QueueRow label="Cola B" clients={state.queueB} icon="fi fi-rr-users" />
-        </>
-      ) : (
-        <QueueRow label="Cola de Espera" clients={state.queue} icon="fi fi-rr-queue-line" />
-      )}
+      <QueueRow label="Cola 1 — Servicio 1" clients={state.queue1} icon="fi fi-rr-arrow-right" />
+      <QueueRow label="Cola 2 — Servicio 2" clients={state.queue2} icon="fi fi-rr-arrow-right" />
+      <QueueRow label="Cola 3 — Servicio 3" clients={state.queue3} icon="fi fi-rr-arrow-right" />
     </div>
   );
 }

@@ -1,21 +1,30 @@
 /**
- * Registro central de todos los problemas disponibles.
- * Importa aquí para agregar nuevos problemas al sistema.
+ * Registro central de problemas disponibles.
  */
 
 import type { ProblemDefinition } from '../types';
-import problem1 from './problem1';
-import problem2 from './problem2';
-import problem3 from './problem3';
-import problem4 from './problem4';
-import problem5 from './problem5';
+import problem6 from './problem6';
+import problem7 from './problem7';
+import problem8 from './problem8';
+import problem9 from './problem9';
+import problem10 from './problem10';
+import problem11 from './problem11';
+import problem12 from './problem12';
+import problem13 from './problem13';
+import problem14 from './problem14';
+import problem15 from './problem15';
 
 export const problems: ProblemDefinition[] = [
-  problem1,
-  problem2,
-  problem3,
-  problem4,
-  problem5,
+  problem6,
+  problem7,
+  problem8,
+  problem9,
+  problem10,
+  problem11,
+  problem12,
+  problem13,
+  problem14,
+  problem15,
 ];
 
 export const getProblem = (id: number): ProblemDefinition | undefined =>

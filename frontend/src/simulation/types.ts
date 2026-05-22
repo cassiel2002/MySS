@@ -1,38 +1,35 @@
 /**
  * Tipos centrales para el motor de simulación de eventos discretos.
- * Todos los módulos importan desde aquí para mantener consistencia.
+ * Soporta problemas con múltiples puestos de servicio.
  */
 
 // ─── Tipos de eventos posibles ───────────────────────────────────────────────
 
 export type EventType =
   | 'arrival'        // Cliente llega al sistema
-  | 'departure'      // Cliente termina servicio y se va
-  | 'server_on'      // Servidor se activa (problema 2)
-  | 'server_off'     // Servidor se apaga (problema 2)
-  | 'abandon'        // Cliente abandona la cola (problema 3)
-  | 'move_to_server' // Cliente pasa de seguridad al servidor (problema 5)
-  | 'arrival_a'      // Llega cliente tipo A (problema 4)
-  | 'arrival_b';     // Llega cliente tipo B (problema 4)
+  | 'departure_s1'   // Fin de servicio en puesto 1
+  | 'departure_s2'   // Fin de servicio en puesto 2
+  | 'departure_s3'   // Fin de servicio en puesto 3
+  | 'departure'      // Fin de servicio (puesto único)
+  | 'abandon'        // Cliente abandona la cola
+  | 'server_off'     // Servidor sale de servicio (descanso)
+  | 'server_on';     // Servidor vuelve de descanso
 
 // ─── Evento en la lista de eventos futuros (FEL) ─────────────────────────────
 
 export interface SimEvent {
-  time: number;         // Tiempo en que ocurrirá el evento
-  type: EventType;      // Tipo de evento
-  clientId?: number;    // ID del cliente asociado (si aplica)
-  data?: unknown;       // Datos extra (libre para cada problema)
+  time: number;
+  type: EventType;
+  clientId?: number;
+  data?: unknown;
 }
 
 // ─── Cliente en el sistema ────────────────────────────────────────────────────
 
 export interface Client {
   id: number;
-  arrivalTime: number;          // Cuando llegó al sistema
-  serviceStartTime?: number;    // Cuando empezó a ser atendido
-  clientType?: 'A' | 'B';       // Para problema 4 (prioridad)
-  abandonTime?: number;         // Tiempo límite de paciencia (problema 3)
-  securityArrivalTime?: number; // Para problema 5
+  arrivalTime: number;
+  serviceStartTime?: number;
 }
 
 // ─── Estadísticas acumuladas ──────────────────────────────────────────────────
@@ -40,79 +37,141 @@ export interface Client {
 export interface SimulationStats {
   totalArrivals: number;
   totalDepartures: number;
-  totalWaitTime: number;       // Suma de tiempos de espera en cola
-  totalSystemTime: number;     // Suma de tiempos en el sistema (cola + servicio)
-  serverBusyTime: number;      // Tiempo total que el servidor estuvo ocupado
-  totalQueueArea: number;      // Área bajo la curva de longitud de cola (para W_q promedio)
-  lastEventTime: number;       // Tiempo del último evento (para calcular áreas)
-  lastQueueLength: number;     // Longitud de cola en el último evento
-  abandonedClients: number;    // Clientes que abandonaron (problema 3)
+  totalSystemTime: number;
+  totalWaitTime: number;
+  server1BusyTime: number;
+  server2BusyTime: number;
+  server3BusyTime: number;
+  departuresS1: number;
+  departuresS2: number;
+  departuresS3: number;
 }
 
 // ─── Estado completo de la simulación ────────────────────────────────────────
 
 export interface SimulationState {
   clock: number;
+  queue: Client[];
+  queue1: Client[];
+  queue2: Client[];
+  queue3: Client[];
+  currentClientS1: Client | null;
+  currentClientS2: Client | null;
+  currentClientS3: Client | null;
+  server1Busy: boolean;
+  server2Busy: boolean;
+  server3Busy: boolean;
+
+  // Single-server state (problems 9-12)
   serverBusy: boolean;
-  serverOn: boolean;          // ¿El servidor está disponible? (problema 2)
-
-  // Cola(s) de espera
-  queue: Client[];            // Cola general (problemas 1, 2, 3, 5 - cola principal)
-  queueA: Client[];           // Cola tipo A - alta prioridad (problema 4)
-  queueB: Client[];           // Cola tipo B - baja prioridad (problema 4)
-  securityQueue: Client[];    // Cola de seguridad (problema 5)
-
-  // Clientes en servicio
-  currentClient: Client | null;         // Cliente siendo atendido por servidor principal
-  currentSecurityClient: Client | null; // Cliente en seguridad (problema 5)
-
-  // Estado del servidor de seguridad (problema 5)
-  securityBusy: boolean;
+  serverOn: boolean;           // Servidor disponible (true) o en descanso (false)
+  currentClient: Client | null;
 
   stats: SimulationStats;
   log: LogEntry[];
-  clientIdCounter: number;    // Contador para generar IDs únicos
-  finished: boolean;          // Simulación terminada
+  clientIdCounter: number;
+  finished: boolean;
+  simulationMatrix: MatrixRow[];
+  arrivalIndex: number;
+
+  // Contadores auxiliares para responder preguntas
+  abandonedClients: number;
+  servedClients: number;
+  divertedClients: number;     // Piezas desviadas (prob 11)
+  serverBreaks: number;        // Cantidad de descansos del servidor
 }
 
-// ─── Entrada del log de eventos ───────────────────────────────────────────────
+// ─── Fila de la matriz de simulación ──────────────────────────────────────────
+
+export interface MatrixRow {
+  clock: number;
+  eventDescription: string;
+  nextArrivalS1: number | null;
+  nextArrivalS2: number | null;
+  nextArrivalS3: number | null;
+  nextDepartureS1: number | null;
+  nextDepartureS2: number | null;
+  nextDepartureS3: number | null;
+  queueLenS1: number;
+  queueLenS2: number;
+  queueLenS3: number;
+  serverStateS1: number;
+  serverStateS2: number;
+  serverStateS3: number;
+}
+
+// ─── Entrada del log ──────────────────────────────────────────────────────────
 
 export interface LogEntry {
   time: number;
   message: string;
-  type: 'arrival' | 'departure' | 'server' | 'abandon' | 'info' | 'security';
+  type: 'arrival' | 'departure' | 'info' | 'abandon' | 'server';
 }
 
 // ─── Modo de generación de tiempos ────────────────────────────────────────────
 
-export type TimeMode = 'random' | 'manual' | 'uniform_range';
+export type TimeMode = 'random' | 'manual' | 'list';
 export type Distribution = 'exponential' | 'uniform' | 'normal';
 
 // ─── Configuración del problema ───────────────────────────────────────────────
 
 export interface ProblemConfig {
   maxTime: number;
-  arrivalInterval: number;   // Tiempo entre llegadas (promedio o fijo según modo)
-  serviceTime: number;       // Tiempo de servicio (promedio o fijo según modo)
-  abandonTime?: number;      // Tiempo antes de abandonar (problema 3)
-  serverOnTime?: number;     // Tiempo que servidor está encendido (problema 2)
-  serverOffTime?: number;    // Tiempo que servidor está apagado (problema 2)
-  securityTime?: number;     // Tiempo de revisión en seguridad (problema 5)
-  arrivalIntervalB?: number; // Tiempo entre llegadas tipo B (problema 4)
+  problemId: number;           // 6 = serie, 7 = paralelo, 8 = sucesivos
+  numServers: number;          // Cantidad de puestos de servicio (1-3)
 
-  // Modo de tiempos y distribución
+  // ─── Tiempos entre llegadas ───
+  arrivalMode: TimeMode;       // 'manual' = constante, 'random' = aleatorio, 'list' = lista definida
+  arrivalInterval: number;     // Valor constante o media (para manual/random)
+  arrivalList: number[];       // Lista de intervalos entre llegadas (para modo 'list')
+  arrivalDistribution: Distribution;
+
+  // Para problema 6: llegadas independientes por subsistema
+  arrivalIntervalS1: number;
+  arrivalIntervalS2: number;
+  arrivalIntervalS3: number;
+  arrivalListS1: number[];
+  arrivalListS2: number[];
+  arrivalListS3: number[];
+
+  // ─── Tiempos de servicio por puesto ───
+  serviceMode: TimeMode;       // 'manual' = constante, 'random' = aleatorio, 'list' = lista
+  serviceTimeS1: number;
+  serviceTimeS2: number;
+  serviceTimeS3: number;
+  serviceDistribution: Distribution;
+
+  // Listas de tiempos de servicio (modo 'list')
+  serviceListS1: number[];
+  serviceListS2: number[];
+  serviceListS3: number[];
+
+  // Rango uniforme (min-max) para servicio
+  serviceMinS1?: number;
+  serviceMaxS1?: number;
+  serviceMinS2?: number;
+  serviceMaxS2?: number;
+  serviceMinS3?: number;
+  serviceMaxS3?: number;
+
+  // ─── Parámetros para problemas de un solo servidor (9-12) ───
+  serviceTime?: number;         // Tiempo de servicio (puesto único)
+  serviceMin?: number;          // Rango min servicio
+  serviceMax?: number;          // Rango max servicio
+  abandonTime?: number;         // Tiempo de paciencia antes de abandonar
+  serverOnTime?: number;        // Tiempo que el servidor trabaja antes de descansar
+  serverOffTime?: number;       // Duración del descanso
+  initialQueue?: number;        // Clientes en cola al inicio
+  initialWaitTime?: number;     // Tiempo que ya llevan esperando los clientes iniciales
+
+  // Estado inicial de cada puesto de servicio (1=ocupado, 0=libre)
+  initialPS1?: number;
+  initialPS2?: number;
+  initialPS3?: number;
+
+  // Legacy compatibility
   timeMode: TimeMode;
   distribution: Distribution;
-
-  // Rangos para modo uniform_range (a-b)
-  arrivalMin?: number;
-  arrivalMax?: number;
-  serviceMin?: number;
-  serviceMax?: number;
-
-  // Estado inicial configurable
-  initialQueue: number;       // Clientes en cola al inicio
-  initialServerBusy: boolean; // Servidor ocupado al inicio
 }
 
 // ─── Resultado de procesar un evento ─────────────────────────────────────────
@@ -136,10 +195,10 @@ export interface ProblemDefinition {
 // ─── Métricas calculadas para mostrar en UI ───────────────────────────────────
 
 export interface ComputedMetrics {
-  avgWaitTime: number;         // W_q: tiempo promedio en cola
-  avgSystemTime: number;       // W: tiempo promedio en sistema
-  serverUtilization: number;   // ρ: fracción del tiempo que el servidor estuvo ocupado
-  avgQueueLength: number;      // L_q: promedio de clientes en cola
-  throughput: number;          // λ_eff: tasa de salida efectiva
-  abandonRate: number;         // Tasa de abandono (problema 3)
+  avgSystemTime: number;
+  avgWaitTime: number;
+  serverUtilizationS1: number;
+  serverUtilizationS2: number;
+  serverUtilizationS3: number;
+  throughput: number;
 }

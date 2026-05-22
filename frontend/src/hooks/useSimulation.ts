@@ -7,6 +7,16 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import type { SimulationState, SimEvent, ProblemConfig, ComputedMetrics } from '../simulation/types';
 import { insertEvent, getNextEvent } from '../simulation/eventQueue';
 import { getProblem } from '../simulation/problems';
+import { buildMatrixRow as buildMatrixRow6 } from '../simulation/problems/problem6';
+import { buildMatrixRow as buildMatrixRow7 } from '../simulation/problems/problem7';
+import { buildMatrixRow as buildMatrixRow8 } from '../simulation/problems/problem8';
+import { buildMatrixRow as buildMatrixRow9 } from '../simulation/problems/problem9';
+import { buildMatrixRow as buildMatrixRow10 } from '../simulation/problems/problem10';
+import { buildMatrixRow as buildMatrixRow11 } from '../simulation/problems/problem11';
+import { buildMatrixRow as buildMatrixRow12 } from '../simulation/problems/problem12';
+import { buildMatrixRow as buildMatrixRow13 } from '../simulation/problems/problem13';
+import { buildMatrixRow as buildMatrixRow14 } from '../simulation/problems/problem14';
+import { buildMatrixRow as buildMatrixRow15 } from '../simulation/problems/problem15';
 
 interface UseSimulationReturn {
   state: SimulationState | null;
@@ -23,7 +33,6 @@ interface UseSimulationReturn {
 }
 
 export const useSimulation = (
-  problemId: number,
   config: ProblemConfig
 ): UseSimulationReturn => {
   const [state, setState] = useState<SimulationState | null>(null);
@@ -38,6 +47,8 @@ export const useSimulation = (
 
   stateRef.current = state;
   felRef.current = fel;
+
+  const problemId = config.problemId;
 
   // ── Inicializar ──────────────────────────────────────────────────────────
   const init = useCallback(() => {
@@ -68,7 +79,6 @@ export const useSimulation = (
     const [nextEvent, remainingFel] = getNextEvent(currentFel);
 
     if (!nextEvent || nextEvent.time > config.maxTime) {
-      // Simulación terminada
       setState(prev => prev ? { ...prev, finished: true } : prev);
       setFel([]);
       setIsRunning(false);
@@ -81,7 +91,7 @@ export const useSimulation = (
     const stateAtEvent = { ...currentState, clock: nextEvent.time };
     const { newState, newEvents, cancelEvents } = problem.handleEvent(nextEvent, stateAtEvent, config);
 
-    // Primero, remover eventos cancelados de la FEL existente
+    // Remover eventos cancelados
     let newFel = [...remainingFel];
     if (cancelEvents && cancelEvents.length > 0) {
       for (const cancel of cancelEvents) {
@@ -96,10 +106,39 @@ export const useSimulation = (
       }
     }
 
-    // Si la FEL queda vacía después de filtrar, la simulación termina
+    // Si la FEL queda vacía, la simulación termina
     if (newFel.length === 0) {
       newState.finished = true;
     }
+
+    // Generar fila de la matriz de simulación
+    const eventDescriptions: Record<string, string> = {
+      'arrival': `Llegada #${nextEvent.clientId}`,
+      'departure_s1': `Fin PS1 (#${nextEvent.clientId})`,
+      'departure_s2': `Fin PS2 (#${nextEvent.clientId})`,
+      'departure_s3': `Fin PS3 (#${nextEvent.clientId})`,
+      'departure': `Fin servicio (#${nextEvent.clientId})`,
+      'abandon': `Abandono (#${nextEvent.clientId})`,
+      'server_off': `Servidor → descanso`,
+      'server_on': `Servidor → activo`,
+    };
+    const desc = eventDescriptions[nextEvent.type] ?? nextEvent.type;
+
+    const matrixBuilders: Record<number, typeof buildMatrixRow6> = {
+      6: buildMatrixRow6,
+      7: buildMatrixRow7,
+      8: buildMatrixRow8,
+      9: buildMatrixRow9,
+      10: buildMatrixRow10,
+      11: buildMatrixRow11,
+      12: buildMatrixRow12,
+      13: buildMatrixRow13,
+      14: buildMatrixRow14,
+      15: buildMatrixRow15,
+    };
+    const buildMatrix = matrixBuilders[problemId] ?? buildMatrixRow6;
+    const matrixRow = buildMatrix(newState, newFel, desc);
+    newState.simulationMatrix = [...newState.simulationMatrix, matrixRow];
 
     setState(newState);
     setFel(newFel);
@@ -155,14 +194,12 @@ export const useSimulation = (
     const { stats, clock } = state;
     const departures = stats.totalDepartures || 1;
     return {
-      avgWaitTime: stats.totalWaitTime / departures,
       avgSystemTime: stats.totalSystemTime / departures,
-      serverUtilization: stats.serverBusyTime / clock,
-      avgQueueLength: stats.totalQueueArea / clock,
+      avgWaitTime: stats.totalWaitTime / departures,
+      serverUtilizationS1: stats.server1BusyTime / clock,
+      serverUtilizationS2: stats.server2BusyTime / clock,
+      serverUtilizationS3: stats.server3BusyTime / clock,
       throughput: stats.totalDepartures / clock,
-      abandonRate: stats.totalArrivals > 0
-        ? stats.abandonedClients / stats.totalArrivals
-        : 0,
     };
   })() : null;
 

@@ -34,7 +34,7 @@ export default function Controls({
         onClick={handlePlayPause}
         disabled={isFinished}
         className={`
-          flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-semibold tracking-wide transition-all
+          flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold tracking-wide transition-all
           ${isFinished
             ? 'bg-zinc-900 text-zinc-600 cursor-not-allowed'
             : isRunning
@@ -43,7 +43,7 @@ export default function Controls({
           }
         `}
       >
-        <i className={`fi ${isRunning ? 'fi-rr-pause' : 'fi-rr-play'} text-[11px]`} />
+        <i className={`fi ${isRunning ? 'fi-rr-pause' : 'fi-rr-play'} text-xs`} />
         {isRunning ? 'Pausar' : isInitialized ? 'Continuar' : 'Iniciar'}
       </motion.button>
 
@@ -53,32 +53,32 @@ export default function Controls({
         onClick={() => { if (!isInitialized) onInit(); else onStep(); }}
         disabled={isRunning || isFinished}
         className={`
-          flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-medium transition-all
+          flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium transition-all
           ${(isRunning || isFinished)
             ? 'bg-zinc-900 text-zinc-700 cursor-not-allowed'
             : 'bg-zinc-800/80 text-zinc-300 hover:bg-zinc-800'
           }
         `}
       >
-        <i className="fi fi-rr-forward text-[10px]" /> Paso
+        <i className="fi fi-rr-forward text-xs" /> Paso
       </motion.button>
 
       <motion.button
         whileHover={{ scale: 1.03 }}
         whileTap={{ scale: 0.95 }}
         onClick={onReset}
-        className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-medium bg-zinc-800/80 text-zinc-400 hover:text-red-400 hover:bg-red-500/10 transition-all"
+        className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium bg-zinc-800/80 text-zinc-400 hover:text-red-400 hover:bg-red-500/10 transition-all"
       >
-        <i className="fi fi-rr-refresh text-[10px]" /> Reset
+        <i className="fi fi-rr-refresh text-xs" /> Reset
       </motion.button>
 
       {isFinished && (
         <motion.span
           initial={{ opacity: 0, x: -8 }}
           animate={{ opacity: 1, x: 0 }}
-          className="flex items-center gap-1.5 text-xs text-emerald-400 font-medium ml-2"
+          className="flex items-center gap-1.5 text-sm text-emerald-400 font-medium ml-2"
         >
-          <i className="fi fi-sr-check-circle text-[10px]" /> Simulación completada
+          <i className="fi fi-sr-check-circle text-xs" /> Completada
         </motion.span>
       )}
     </motion.div>

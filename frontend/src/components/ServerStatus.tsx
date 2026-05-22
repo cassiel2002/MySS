@@ -4,17 +4,17 @@ import type { SimulationState } from '../simulation/types';
 interface Props {
   state: SimulationState;
   problemId: number;
+  numServers?: number;
 }
 
-function ServerBox({ label, busy, on = true, clientId, icon }: {
-  label: string; busy: boolean; on?: boolean; clientId?: number | null; icon: string;
+function ServerBox({ label, busy, clientId, icon }: {
+  label: string; busy: boolean; clientId?: number | null; icon: string;
 }) {
-  const isOff = !on;
-  const status = isOff ? 'OFF' : busy ? 'OCUPADO' : 'LIBRE';
-  const dotCls = isOff ? 'bg-zinc-600' : busy ? 'bg-red-400 animate-pulse' : 'bg-emerald-400';
-  const borderCls = isOff ? 'border-zinc-800/60' : busy ? 'border-red-500/20' : 'border-emerald-500/20';
-  const bgCls = isOff ? 'bg-zinc-900' : busy ? 'bg-red-500/[0.05]' : 'bg-emerald-500/[0.05]';
-  const textCls = isOff ? 'text-zinc-600' : busy ? 'text-red-300' : 'text-emerald-300';
+  const status = busy ? 'OCUPADO' : 'LIBRE';
+  const dotCls = busy ? 'bg-red-400 animate-pulse' : 'bg-emerald-400';
+  const borderCls = busy ? 'border-red-500/20' : 'border-emerald-500/20';
+  const bgCls = busy ? 'bg-red-500/[0.05]' : 'bg-emerald-500/[0.05]';
+  const textCls = busy ? 'text-red-300' : 'text-emerald-300';
 
   return (
     <motion.div
@@ -35,7 +35,7 @@ function ServerBox({ label, busy, on = true, clientId, icon }: {
         </div>
       </div>
       <AnimatePresence mode="wait">
-        {busy && on && clientId != null ? (
+        {busy && clientId != null ? (
           <motion.div
             key={`c-${clientId}`}
             initial={{ scale: 0.5, opacity: 0, rotate: -10 }}
@@ -56,7 +56,7 @@ function ServerBox({ label, busy, on = true, clientId, icon }: {
             animate={{ opacity: 1 }}
             className="h-10 flex items-center"
           >
-            <span className="text-[10px] text-zinc-700 italic">{isOff ? 'Servidor inactivo' : 'Esperando...'}</span>
+            <span className="text-[10px] text-zinc-700 italic">Esperando...</span>
           </motion.div>
         )}
       </AnimatePresence>
@@ -64,27 +64,33 @@ function ServerBox({ label, busy, on = true, clientId, icon }: {
   );
 }
 
-export default function ServerStatus({ state, problemId }: Props) {
+export default function ServerStatus({ state, problemId, numServers = 3 }: Props) {
+  const isSingleServer = [9, 10, 11, 13, 14, 15].includes(problemId);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.05 }}
-      className="flex gap-3"
     >
-      {problemId === 5 ? (
-        <>
-          <ServerBox label="Zona Seguridad" busy={state.securityBusy} clientId={state.currentSecurityClient?.id ?? null} icon="fi fi-rr-shield" />
-          <ServerBox label="Servidor" busy={state.serverBusy} clientId={state.currentClient?.id ?? null} icon="fi fi-rr-server" />
-        </>
+      {problemId === 7 && (
+        <p className="text-[10px] text-zinc-500 mb-2 uppercase tracking-wider font-semibold">Servicio único — {numServers} puestos paralelos</p>
+      )}
+      {(problemId === 6 || problemId === 8) && (
+        <p className="text-[10px] text-zinc-500 mb-2 uppercase tracking-wider font-semibold">
+          {problemId === 6 ? `${numServers} servicios en secuencia` : `${numServers} servicios sucesivos`}
+        </p>
+      )}
+      {isSingleServer ? (
+        <div className="flex gap-3">
+          <ServerBox label="PS" busy={state.serverBusy} clientId={state.currentClient?.id ?? null} icon="fi fi-rr-server" />
+        </div>
       ) : (
-        <ServerBox
-          label="Servidor Principal"
-          busy={state.serverBusy}
-          on={problemId === 2 ? state.serverOn : true}
-          clientId={state.currentClient?.id ?? null}
-          icon={problemId === 2 ? (state.serverOn ? 'fi fi-rr-bolt' : 'fi fi-rr-power') : 'fi fi-rr-server'}
-        />
+        <div className="flex gap-3">
+          <ServerBox label="PS1" busy={state.server1Busy} clientId={state.currentClientS1?.id ?? null} icon="fi fi-rr-server" />
+          {numServers >= 2 && <ServerBox label="PS2" busy={state.server2Busy} clientId={state.currentClientS2?.id ?? null} icon="fi fi-rr-server" />}
+          {numServers >= 3 && <ServerBox label="PS3" busy={state.server3Busy} clientId={state.currentClientS3?.id ?? null} icon="fi fi-rr-server" />}
+        </div>
       )}
     </motion.div>
   );
